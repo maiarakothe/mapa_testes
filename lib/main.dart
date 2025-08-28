@@ -57,81 +57,56 @@ const Map<String, IconData> blockIcons = {
 
 class WorkflowBlock {
   final String id;
-  final String title;
-  final String subtitle;
-  final String type; // "trigger", "action", "paths", "path", "delay", "email", "webhook"
-  List<String> childrenIds;
+  String title;
+  String subtitle;
+  final String type;
+  List<WorkflowBlock> children;
 
   WorkflowBlock({
     required this.id,
     required this.title,
     required this.subtitle,
     required this.type,
-    List<String>? childrenIds,
-  }) : childrenIds = childrenIds ?? [];
+    List<WorkflowBlock>? children,
+  }) : children = children ?? [];
+}
 
-  WorkflowBlock copyWith({
-    String? id,
-    String? title,
-    String? subtitle,
-    String? type,
-    List<String>? childrenIds,
-  }) {
-    return WorkflowBlock(
-      id: id ?? this.id,
-      title: title ?? this.title,
-      subtitle: subtitle ?? this.subtitle,
-      type: type ?? this.type,
-      childrenIds: childrenIds ?? this.childrenIds,
-    );
-  }
+// Classe auxiliar para encontrar um bloco e seu pai na árvore
+class BlockLocation {
+  final WorkflowBlock? parent;
+  final WorkflowBlock block;
+  final int index;
+
+  BlockLocation({required this.block, this.parent, required this.index});
 }
 
 // ---------------- Modelo ----------------
 
 class WorkflowModel extends ChangeNotifier {
-  final List<WorkflowBlock> _blocks = [
-    WorkflowBlock(
-      id: 'start',
-      title: 'Trigger',
-      subtitle: 'Início do fluxo',
-      type: 'trigger',
-    ),
-  ];
+  final WorkflowBlock _rootBlock = WorkflowBlock(
+    id: 'start',
+    title: 'Trigger',
+    subtitle: 'Início do fluxo',
+    type: 'trigger',
+  );
 
-  List<WorkflowBlock> get blocks => _blocks;
+  WorkflowBlock get rootBlock => _rootBlock;
 
-  WorkflowBlock? getBlockById(String id) {
-    try {
-      return _blocks.firstWhere((b) => b.id == id);
-    } catch (e) {
-      return null;
+  BlockLocation? findBlockAndParent(String id, WorkflowBlock? startNode, {WorkflowBlock? parent}) {
+    if (startNode == null) return null;
+    if (startNode.id == id) {
+      return BlockLocation(block: startNode, parent: parent, index: parent?.children.indexOf(startNode) ?? 0);
     }
+    for (int i = 0; i < startNode.children.length; i++) {
+      final found = findBlockAndParent(id, startNode.children[i], parent: startNode);
+      if (found != null) return found;
+    }
+    return null;
   }
 
-  void removeBlock(String id) {
-    _blocks.removeWhere((b) => b.id == id);
-    notifyListeners();
-  }
-
-  void reorderBlock(String targetId, String draggedId) {
-    final draggedBlock = getBlockById(draggedId);
-    if (draggedBlock == null) return;
-
-    _blocks.removeWhere((b) => b.id == draggedId);
-
-    final target = getBlockById(targetId);
-    if (target == null) return;
-
-    final index = _blocks.indexOf(target);
-    _blocks.insert(index + 1, draggedBlock);
-
-    notifyListeners();
-  }
-
-  void addBlockAfter(String parentId, String title, String type, {String subtitle = 'Adicionado dinamicamente'}) {
-    final parentIndex = _blocks.indexWhere((b) => b.id == parentId);
-    if (parentIndex == -1) return;
+  void addBlockAsChild(String parentId, String title, String type, {String subtitle = 'Adicionado dinamicamente'}) {
+    final parentBlock = findBlockAndParent(parentId, _rootBlock)?.block;
+    if (parentBlock == null) return;
 
     final newBlock = WorkflowBlock(
       id: uuid.v4(),
@@ -140,87 +115,101 @@ class WorkflowModel extends ChangeNotifier {
       type: type,
     );
 
-    _blocks.insert(parentIndex + 1, newBlock);
+    parentBlock.children.add(newBlock);
     notifyListeners();
   }
 
-  void addPathsAfter(String parentId) {
-    final parentIndex = _blocks.indexWhere((b) => b.id == parentId);
-    if (parentIndex == -1) return;
-
-    final pathsBlockId = uuid.v4();
-    final pathAId = uuid.v4();
-    final pathBId = uuid.v4();
+  void addPaths(String parentId) {
+    final parentBlock = findBlockAndParent(parentId, _rootBlock)?.block;
+    if (parentBlock == null) return;
 
     final pathsBlock = WorkflowBlock(
-      id: pathsBlockId,
+      id: uuid.v4(),
       title: 'Caminhos',
       subtitle: 'Divida em múltiplos caminhos',
       type: 'paths',
-      childrenIds: [pathAId, pathBId],
     );
 
     final pathA = WorkflowBlock(
-      id: pathAId,
+      id: uuid.v4(),
       title: 'Caminho A',
       subtitle: 'Filho A',
       type: 'path',
     );
 
     final pathB = WorkflowBlock(
-      id: pathBId,
+      id: uuid.v4(),
       title: 'Caminho B',
       subtitle: 'Filho B',
       type: 'path',
     );
 
-    _blocks.insertAll(parentIndex + 1, [pathsBlock, pathA, pathB]);
+    pathsBlock.children.add(pathA);
+    pathsBlock.children.add(pathB);
+
+    parentBlock.children.add(pathsBlock);
     notifyListeners();
   }
 
   void addAnotherPath(String pathsBlockId) {
-    final pathsBlock = getBlockById(pathsBlockId);
+    final pathsBlock = findBlockAndParent(pathsBlockId, _rootBlock)?.block;
     if (pathsBlock == null) return;
 
-    final newPathId = uuid.v4();
     final newPathBlock = WorkflowBlock(
-      id: newPathId,
-      title: 'Caminho ${String.fromCharCode(65 + pathsBlock.childrenIds.length)}',
+      id: uuid.v4(),
+      title: 'Caminho ${String.fromCharCode(65 + pathsBlock.children.length)}',
       subtitle: 'Novo Caminho',
       type: 'path',
     );
 
-    pathsBlock.childrenIds.add(newPathId);
+    pathsBlock.children.add(newPathBlock);
+    notifyListeners();
+  }
 
-    final pathsBlockIndex = _blocks.indexOf(pathsBlock);
-    _blocks.insert(pathsBlockIndex + pathsBlock.childrenIds.length, newPathBlock);
+  void reorderBlock(String targetId, String draggedId) {
+    if (targetId == draggedId) return;
+
+    final draggedLocation = findBlockAndParent(draggedId, _rootBlock);
+    final targetLocation = findBlockAndParent(targetId, _rootBlock);
+
+    if (draggedLocation == null || targetLocation == null) return;
+    if (draggedLocation.parent == null) return; // Não permite reordenar o bloco raiz
+
+    final draggedBlock = draggedLocation.block;
+    final draggedParent = draggedLocation.parent!;
+    final draggedIndex = draggedParent.children.indexOf(draggedBlock);
+
+    // Remove o bloco arrastado da sua posição original
+    draggedParent.children.removeAt(draggedIndex);
+
+    // Adiciona o bloco arrastado na nova posição
+    final newParent = targetLocation.parent ?? _rootBlock;
+    final newIndex = newParent.children.indexOf(targetLocation.block);
+
+    // Adicionar a lógica para o caso de o target ser o 'paths'
+    if (newParent.type == 'paths') {
+      newParent.children.insert(newIndex + 1, draggedBlock);
+    } else {
+      // Caso de o target ser um bloco normal
+      newParent.children.insert(newIndex + 1, draggedBlock);
+    }
 
     notifyListeners();
   }
 
-  void renameBlock(String blockId, String newTitle) {
-    final index = _blocks.indexWhere((b) => b.id == blockId);
-    if (index != -1) {
-      final oldBlock = _blocks[index];
-      _blocks[index] = oldBlock.copyWith(title: newTitle);
-      notifyListeners();
-    }
+  void removeBlock(String id) {
+    final location = findBlockAndParent(id, _rootBlock);
+    if (location == null || location.parent == null) return;
+
+    location.parent!.children.remove(location.block);
+    notifyListeners();
   }
 
-  void duplicateBlock(String blockId) {
-    final originalBlock = getBlockById(blockId);
-    if (originalBlock == null) return;
+  void renameBlock(String id, String newTitle) {
+    final block = findBlockAndParent(id, _rootBlock)?.block;
+    if (block == null) return;
 
-    final newBlock = WorkflowBlock(
-      id: uuid.v4(),
-      title: '${originalBlock.title} (Cópia)',
-      subtitle: originalBlock.subtitle,
-      type: originalBlock.type,
-      childrenIds: [...originalBlock.childrenIds],
-    );
-
-    final originalIndex = _blocks.indexOf(originalBlock);
-    _blocks.insert(originalIndex + 1, newBlock);
+    block.title = newTitle;
     notifyListeners();
   }
 }
@@ -236,7 +225,6 @@ class WorkflowPage extends StatefulWidget {
 
 class _WorkflowPageState extends State<WorkflowPage> {
   final ScrollController _scrollController = ScrollController();
-  final GlobalKey _workflowKey = GlobalKey();
 
   @override
   Widget build(BuildContext context) {
@@ -250,9 +238,8 @@ class _WorkflowPageState extends State<WorkflowPage> {
                 controller: _scrollController,
                 padding: const EdgeInsets.all(16),
                 child: Column(
-                  key: _workflowKey,
                   crossAxisAlignment: CrossAxisAlignment.center,
-                  children: _buildLayout(context, model),
+                  children: _buildLayout(context, model.rootBlock),
                 ),
               );
             },
@@ -262,87 +249,59 @@ class _WorkflowPageState extends State<WorkflowPage> {
     );
   }
 
-  List<Widget> _buildLayout(BuildContext context, WorkflowModel model) {
-    final List<Widget> workflowWidgets = [];
-    int i = 0;
-    while (i < model.blocks.length) {
-      final block = model.blocks[i];
+  // Função recursiva para construir o layout
+  List<Widget> _buildLayout(BuildContext context, WorkflowBlock block) {
+    final List<Widget> widgets = [];
+    final model = Provider.of<WorkflowModel>(context, listen: false);
 
+    widgets.add(BlockWidget(
+      block: block,
+      onRenameBlock: (blockToRename) => _showRenameDialog(context, blockToRename),
+      onBlockDropped: (targetId, draggedId) => model.reorderBlock(targetId, draggedId),
+      onRemoveBlock: (id) => model.removeBlock(id),
+    ));
+
+    // Renderiza a linha de conexão e o botão de adicionar
+    widgets.add(const ConnectionLine());
+    widgets.add(
+      AddButton(
+        parentBlockId: block.id,
+        onAddBlock: (parentId) => _showAddBlockDialog(context, parentId),
+        onBlockDropped: (parentId, draggedId) => model.reorderBlock(parentId, draggedId),
+      ),
+    );
+
+    // Renderiza os filhos
+    if (block.children.isNotEmpty) {
       if (block.type == 'paths') {
-        final pathsParentBlock = block;
-
-        // Botão para adicionar caminhos, posicionado acima da ramificação
-        workflowWidgets.add(const ConnectionLine());
-        workflowWidgets.add(
-          AddButton(
-            parentBlockId: pathsParentBlock.id,
-            onBlockDropped: (parentId, draggedId) => model.reorderBlock(parentId, draggedId),
-            onAddBlock: (parentId) => _showAddBlockDialog(context, parentId),
-          ),
-        );
-        workflowWidgets.add(const ConnectionLine(isBranching: true));
-
-        final List<Widget> pathColumns = [];
-        for (int j = 0; j < pathsParentBlock.childrenIds.length; j++) {
-          final pathBlockId = pathsParentBlock.childrenIds[j];
-          final pathBlock = model.getBlockById(pathBlockId);
-          if (pathBlock == null) continue;
-
-          pathColumns.add(
-            Expanded(
-              child: Column(
-                children: [
-                  BlockWidget(
-                    block: pathBlock,
-                    onBlockDropped: (targetId, draggedId) => model.reorderBlock(targetId, draggedId),
-                    onRenameBlock: (blockToRename) => _showRenameDialog(context, blockToRename),
-                  ),
-                  const ConnectionLine(),
-                  AddButton(
-                    parentBlockId: pathBlock.id,
-                    onBlockDropped: (parentId, draggedId) => model.reorderBlock(parentId, draggedId),
-                    onAddBlock: (parentId) => _showAddBlockDialog(context, parentId),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-
-        workflowWidgets.add(
+        widgets.add(const ConnectionLine(isBranching: true));
+        // Se for um bloco 'paths', renderiza os filhos em uma Row
+        widgets.add(
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: pathColumns,
+            children: block.children.map((childBlock) {
+              return Expanded(
+                child: Column(
+                  children: _buildLayout(context, childBlock),
+                ),
+              );
+            }).toList(),
           ),
         );
-
-        i += pathsParentBlock.childrenIds.length;
       } else {
-        workflowWidgets.add(
-          BlockWidget(
-            block: block,
-            onBlockDropped: (targetId, draggedId) => model.reorderBlock(targetId, draggedId),
-            onRenameBlock: (blockToRename) => _showRenameDialog(context, blockToRename),
-          ),
-        );
-        workflowWidgets.add(const ConnectionLine());
-        workflowWidgets.add(
-          AddButton(
-            parentBlockId: block.id,
-            onBlockDropped: (parentId, draggedId) => model.reorderBlock(parentId, draggedId),
-            onAddBlock: (parentId) => _showAddBlockDialog(context, parentId),
-          ),
-        );
+        // Para outros blocos, renderiza os filhos em uma Column
+        for (var childBlock in block.children) {
+          widgets.addAll(_buildLayout(context, childBlock));
+        }
       }
-      i++;
     }
-    return workflowWidgets;
+    return widgets;
   }
 
   void _showAddBlockDialog(BuildContext context, String parentId) {
     final model = Provider.of<WorkflowModel>(context, listen: false);
-    final parentBlock = model.getBlockById(parentId);
+    final parentBlock = model.findBlockAndParent(parentId, model.rootBlock)?.block;
 
     if (parentBlock?.type == 'paths') {
       showDialog(
@@ -354,6 +313,7 @@ class _WorkflowPageState extends State<WorkflowPage> {
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 ListTile(
+                  leading: const Icon(Icons.subdirectory_arrow_right, color: Colors.purple),
                   title: const Text('Adicionar Caminho ao Lado'),
                   onTap: () {
                     model.addAnotherPath(parentId);
@@ -378,7 +338,7 @@ class _WorkflowPageState extends State<WorkflowPage> {
                   leading: Icon(blockIcons['action']),
                   title: const Text('Ação'),
                   onTap: () {
-                    model.addBlockAfter(parentId, 'Nova Ação', 'action');
+                    model.addBlockAsChild(parentId, 'Nova Ação', 'action');
                     Navigator.pop(context);
                   },
                 ),
@@ -386,7 +346,7 @@ class _WorkflowPageState extends State<WorkflowPage> {
                   leading: Icon(blockIcons['paths']),
                   title: const Text('Caminho'),
                   onTap: () {
-                    model.addPathsAfter(parentId);
+                    model.addPaths(parentId);
                     Navigator.pop(context);
                   },
                 ),
@@ -394,7 +354,7 @@ class _WorkflowPageState extends State<WorkflowPage> {
                   leading: Icon(blockIcons['delay']),
                   title: const Text('Atraso'),
                   onTap: () {
-                    model.addBlockAfter(parentId, 'Atraso', 'delay');
+                    model.addBlockAsChild(parentId, 'Atraso', 'delay');
                     Navigator.pop(context);
                   },
                 ),
@@ -402,7 +362,7 @@ class _WorkflowPageState extends State<WorkflowPage> {
                   leading: Icon(blockIcons['email']),
                   title: const Text('E-mail'),
                   onTap: () {
-                    model.addBlockAfter(parentId, 'Enviar E-mail', 'email');
+                    model.addBlockAsChild(parentId, 'Enviar E-mail', 'email');
                     Navigator.pop(context);
                   },
                 ),
@@ -410,7 +370,7 @@ class _WorkflowPageState extends State<WorkflowPage> {
                   leading: Icon(blockIcons['webhook']),
                   title: const Text('Webhook'),
                   onTap: () {
-                    model.addBlockAfter(parentId, 'Disparar Webhook', 'webhook');
+                    model.addBlockAsChild(parentId, 'Disparar Webhook', 'webhook');
                     Navigator.pop(context);
                   },
                 ),
@@ -460,6 +420,7 @@ class BlockWidget extends StatelessWidget {
   final WorkflowBlock block;
   final Function(String targetId, String draggedId) onBlockDropped;
   final Function(WorkflowBlock) onRenameBlock;
+  final Function(String) onRemoveBlock;
   final double width;
 
   const BlockWidget({
@@ -467,12 +428,12 @@ class BlockWidget extends StatelessWidget {
     required this.block,
     required this.onBlockDropped,
     required this.onRenameBlock,
+    required this.onRemoveBlock,
     this.width = 220,
   });
 
   @override
   Widget build(BuildContext context) {
-    final model = Provider.of<WorkflowModel>(context, listen: false);
     final blockColor = blockColors[block.type] ?? Colors.grey;
     final blockIcon = blockIcons[block.type] ?? Icons.block;
 
@@ -494,8 +455,6 @@ class BlockWidget extends StatelessWidget {
   }
 
   Widget _buildBlock(BuildContext context, Color color, IconData icon, {bool highlight = false}) {
-    final model = Provider.of<WorkflowModel>(context, listen: false);
-
     return Container(
       width: width,
       padding: const EdgeInsets.all(12),
@@ -533,9 +492,9 @@ class BlockWidget extends StatelessWidget {
                   if (value == 'rename') {
                     onRenameBlock(block);
                   } else if (value == 'duplicate') {
-                    model.duplicateBlock(block.id);
+                    //model.duplicateBlock(block.id);
                   } else if (value == 'delete') {
-                    model.removeBlock(block.id);
+                    onRemoveBlock(block.id);
                   }
                 },
                 itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
