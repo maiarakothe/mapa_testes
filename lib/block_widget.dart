@@ -28,12 +28,14 @@ class BlockWidget extends StatelessWidget {
     return Draggable<String>(
       data: block.id,
       feedback: Material(
+        elevation: 10,
+        borderRadius: BorderRadius.circular(16),
         child: Opacity(
-          opacity: 0.7,
+          opacity: 0.5,
           child: _buildBlock(context, blockColor, blockIcon),
         ),
       ),
-      childWhenDragging: Opacity(opacity: 0.3, child: _buildBlock(context, blockColor, blockIcon)),
+      childWhenDragging: Opacity(opacity: 0.5, child: _buildBlock(context, blockColor, blockIcon)),
       child: DragTarget<String>(
         onWillAccept: (data) => data != block.id,
         onAccept: (dragged) => onBlockDropped(block.id, dragged),
@@ -49,13 +51,13 @@ class BlockWidget extends StatelessWidget {
       margin: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: highlight ? Colors.blue : Colors.grey, width: 2),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 4))
+            color: highlight ? Colors.grey.withOpacity(0.9) : Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
@@ -67,10 +69,10 @@ class BlockWidget extends StatelessWidget {
               Icon(icon, size: 24, color: color),
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
                   child: Text(
                     block.title,
-                    style: TextStyle(fontWeight: FontWeight.bold, color: color),
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: color),
                   ),
                 ),
               ),
@@ -103,7 +105,11 @@ class BlockWidget extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          Text(block.subtitle),
+          Text(
+            block.subtitle,
+            style: const TextStyle(color: Colors.black54,
+            ),
+          ),
         ],
       ),
     );

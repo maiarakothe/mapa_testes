@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'main.dart';
 
 // ---------------- Linhas ----------------
 
@@ -21,8 +22,8 @@ class StraightLinePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = Colors.grey[400]!
-      ..strokeWidth = 3
+      ..color = DefaultColors.primary
+      ..strokeWidth = 2 // Linha mais fina
       ..style = PaintingStyle.stroke;
     canvas.drawLine(Offset(size.width / 2, 0), Offset(size.width / 2, size.height), paint);
   }
@@ -41,8 +42,8 @@ class BranchingLinePainter extends CustomPainter {
     if (numChildren <= 1) return;
 
     final paint = Paint()
-      ..color = Colors.grey[400]!
-      ..strokeWidth = 3
+      ..color = DefaultColors.primary
+      ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
     final path = Path();
     

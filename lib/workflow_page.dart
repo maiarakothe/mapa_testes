@@ -6,6 +6,7 @@ import 'add_button.dart';
 import 'block_widget.dart';
 import 'connection_line.dart';
 import 'data.dart';
+import 'main.dart';
 
 // ---------------- UI ----------------
 
@@ -22,7 +23,11 @@ class _WorkflowPageState extends State<WorkflowPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Workflow Dinâmico')),
+      appBar: AppBar(
+          title: const Text('Blocos Dinâmicos',
+          style: TextStyle(color: Colors.white)),
+          backgroundColor: DefaultColors.primary,
+      ),
       body: Stack(
         children: [
           Consumer<WorkflowModel>(

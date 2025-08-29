@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'main.dart';
 
 // ---------------- Botão Adicionar ----------------
 
@@ -28,7 +29,7 @@ class AddButton extends StatelessWidget {
           },
           child: CircleAvatar(
             radius: 20,
-            backgroundColor: candidateData.isNotEmpty ? Colors.blue[300] : Colors.green[300],
+            backgroundColor: candidateData.isNotEmpty ? DefaultColors.primary : DefaultColors.secondary,
             child: const Icon(Icons.add, color: Colors.white),
           ),
         );
