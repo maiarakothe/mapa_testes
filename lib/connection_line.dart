@@ -37,23 +37,30 @@ class BranchingLinePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
+    // Adicionado para não desenhar linhas desnecessárias
+    if (numChildren <= 1) return;
+
     final paint = Paint()
       ..color = Colors.grey[400]!
       ..strokeWidth = 3
       ..style = PaintingStyle.stroke;
     final path = Path();
+    
+    final double childColumnWidth = size.width / numChildren;
+    final double firstChildX = childColumnWidth / 2;
+    final double lastChildX = size.width - (childColumnWidth / 2);
+
     // Desenha a linha vertical que sai do bloco pai
     path.moveTo(size.width / 2, 0);
     path.lineTo(size.width / 2, size.height / 2);
 
-    // Linha horizontal que conecta os caminhos
-    path.moveTo(0, size.height / 2);
-    path.lineTo(size.width, size.height / 2);
+    // Linha horizontal vai apenas do primeiro ao último filho
+    path.moveTo(firstChildX, size.height / 2);
+    path.lineTo(lastChildX, size.height / 2);
 
     // Linhas verticais que descem para cada caminho
-    final double spacing = size.width / (numChildren + 1);
     for (int i = 0; i < numChildren; i++) {
-      final x = spacing * (i + 1);
+      final x = firstChildX + (i * childColumnWidth);
       path.moveTo(x, size.height / 2);
       path.lineTo(x, size.height);
     }
@@ -62,5 +69,7 @@ class BranchingLinePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(CustomPainter oldDelegate) => false;
+  bool shouldRepaint(CustomPainter oldDelegate) {
+    return oldDelegate is! BranchingLinePainter || oldDelegate.numChildren != numChildren;
+  }
 }
