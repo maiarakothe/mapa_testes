@@ -100,12 +100,22 @@ class WorkflowModel extends ChangeNotifier {
     final draggedBlock = draggedLocation.block;
     final draggedParent = draggedLocation.parent!;
     final draggedIndex = draggedParent.children.indexOf(draggedBlock);
+    final newParent = targetLocation.parent ?? _rootBlock;
+
+    // Impede o movimento de um 'caminho' para fora de um 'caminhoS'
+    if (draggedBlock.type == 'path' && newParent.type != 'paths') {
+      return;
+    }
+
+    //  Impede que um bloco que NÃO seja 'caminho' se torne filho de um 'caminhoS'
+    if (newParent.type == 'paths' && draggedBlock.type != 'path') {
+      return;
+    }
 
     // Remove o bloco arrastado da sua posição original
     draggedParent.children.removeAt(draggedIndex);
 
     // Adiciona o bloco arrastado na nova posição
-    final newParent = targetLocation.parent ?? _rootBlock;
     final newIndex = newParent.children.indexOf(targetLocation.block);
 
     // Adicionar a lógica para o caso de o target ser o 'paths'
