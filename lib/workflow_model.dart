@@ -133,7 +133,20 @@ class WorkflowModel extends ChangeNotifier {
     final location = findBlockAndParent(id, _rootBlock);
     if (location == null || location.parent == null) return;
 
-    location.parent!.children.remove(location.block);
+    if (location.block.type == 'paths') {
+      location.parent!.children.remove(location.block);
+    }
+    else {
+      final parentChildren = location.parent!.children;
+      final blockToRemove = location.block;
+      final index = parentChildren.indexOf(blockToRemove);
+
+      parentChildren.removeAt(index);
+      if (blockToRemove.children.isNotEmpty) {
+        parentChildren.insertAll(index, blockToRemove.children);
+      }
+    }
+
     notifyListeners();
   }
 
