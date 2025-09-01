@@ -18,25 +18,26 @@ class WorkflowPage extends StatefulWidget {
 }
 
 class _WorkflowPageState extends State<WorkflowPage> {
-  final TransformationController _transformationController = TransformationController();
+  final TransformationController _transformationController =
+      TransformationController();
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-          title: const Text('Blocos Dinâmicos',
-          style: TextStyle(color: Colors.white)),
-          backgroundColor: DefaultColors.primary,
-          actions: [
-            IconButton(
-              icon: const Icon(Icons.zoom_in, color: Colors.white),
-              onPressed: _zoomIn,
-            ),
-            IconButton(
-              icon: const Icon(Icons.zoom_out, color: Colors.white),
-              onPressed: _zoomOut,
-            ),
-          ],
+        title: const Text('Blocos Dinâmicos',
+            style: TextStyle(color: Colors.white)),
+        backgroundColor: DefaultColors.primary,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.zoom_in, color: Colors.white),
+            onPressed: _zoomIn,
+          ),
+          IconButton(
+            icon: const Icon(Icons.zoom_out, color: Colors.white),
+            onPressed: _zoomOut,
+          ),
+        ],
       ),
       body: Consumer<WorkflowModel>(
         builder: (context, model, _) {
@@ -57,12 +58,13 @@ class _WorkflowPageState extends State<WorkflowPage> {
             //   ),
             // ),
             child: SizedBox(
-             // colocada uma largura fixa por enquanto
+              // colocada uma largura fixa por enquanto
               width: 3000,
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.center,
-                children: _buildLayout(context, model.rootBlock),
+                children: _buildLayout(context, model.rootBlock,
+                    allowLeafFenda: true),
               ),
             ),
           );
@@ -81,81 +83,142 @@ class _WorkflowPageState extends State<WorkflowPage> {
     final Matrix4 currentMatrix = _transformationController.value;
     final double scale = currentMatrix.storage[0];
     final double newScale = (scale * 1.2).clamp(0.1, 2.0);
-    _transformationController.value = Matrix4.identity()
-      ..scale(newScale);
+    _transformationController.value = Matrix4.identity()..scale(newScale);
   }
 
   void _zoomOut() {
     final Matrix4 currentMatrix = _transformationController.value;
     final double scale = currentMatrix.storage[0];
     final double newScale = (scale / 1.2).clamp(0.1, 2.0);
-    _transformationController.value = Matrix4.identity()
-      ..scale(newScale);
+    _transformationController.value = Matrix4.identity()..scale(newScale);
   }
 
   // Função recursiva para construir o layout
-  List<Widget> _buildLayout(BuildContext context, WorkflowBlock block) {
+  List<Widget> _buildLayout(BuildContext context, WorkflowBlock block,
+      {bool allowLeafFenda = false}) {
     final List<Widget> widgets = [];
     final model = Provider.of<WorkflowModel>(context, listen: false);
 
     widgets.add(BlockWidget(
       block: block,
-      onRenameBlock: (blockToRename) => _showRenameDialog(context, blockToRename),
-      onBlockDropped: (targetId, draggedId) => model.reorderBlock(targetId, draggedId),
+      onRenameBlock: (blockToRename) =>
+          _showRenameDialog(context, blockToRename),
+      onBlockDropped: (targetId, draggedId) =>
+          model.reorderBlock(targetId, draggedId),
       onRemoveBlock: (id) => model.removeBlock(id),
     ));
 
-    // Renderiza a linha de conexão e o botão de adicionar
+    // 'paths' permanece com o layout especial
+    if (block.type == 'paths') {
+      widgets.add(const ConnectionLine());
+      widgets.add(
+        SizedBox(
+          height: 50,
+          child: CustomPaint(
+            painter: BranchingLinePainter(numChildren: block.children.length),
+            child: Container(),
+          ),
+        ),
+      );
+
+      widgets.add(
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: block.children.map((childBlock) {
+            return Expanded(
+              child: Column(
+                children: [
+                  // Renderiza o próprio caminho (ex: Caminho A)
+                  ..._buildLayout(context, childBlock, allowLeafFenda: true),
+
+                  // Linha + AddButton específicos desse caminho
+                  const ConnectionLine(),
+                  AddButton(
+                    parentBlockId: childBlock.id,
+                    insertIndex: childBlock.children.length,
+                    onAddBlock: (parentId, insertIndex) =>
+                        _showAddBlockDialog(context, parentId, insertIndex),
+                    onBlockDropped: (parentId, draggedId, insertIndex) =>
+                        model.moveBlockTo(parentId, draggedId, insertIndex),
+                  ),
+                ],
+              ),
+            );
+          }).toList(),
+        ),
+      );
+
+      return widgets;
+    }
+
+    final children = block.children;
+
+    // Linha do bloco atual para a área dos filhos
     widgets.add(const ConnectionLine());
+
+    // Sem filhos: mostra a fenda de folha somente se permitido
+    if (children.isEmpty) {
+      if (allowLeafFenda) {
+        widgets.add(
+          AddButton(
+            parentBlockId: block.id,
+            insertIndex: 0,
+            onAddBlock: (parentId, insertIndex) =>
+                _showAddBlockDialog(context, parentId, insertIndex),
+            onBlockDropped: (parentId, draggedId, insertIndex) =>
+                model.moveBlockTo(parentId, draggedId, insertIndex),
+          ),
+        );
+      }
+      return widgets;
+    }
+
+    // Com filhos: para cada filho, renderizar:
+    //  AddButton(i) -> ConnectionLine -> child[i] -> ConnectionLine
+    for (int i = 0; i < children.length; i++) {
+      // Fenda do pai ANTES do filho i
+      widgets.add(
+        AddButton(
+          parentBlockId: block.id,
+          insertIndex: i,
+          onAddBlock: (parentId, insertIndex) =>
+              _showAddBlockDialog(context, parentId, insertIndex),
+          onBlockDropped: (parentId, draggedId, insertIndex) =>
+              model.moveBlockTo(parentId, draggedId, insertIndex),
+        ),
+      );
+
+      // Linha da fenda até o filho
+      widgets.add(const ConnectionLine());
+
+      // Renderiza o filho i, suprimindo a fenda interna de folha (evita "plus" duplicado)
+      widgets.addAll(_buildLayout(context, children[i], allowLeafFenda: false));
+
+      // Linha do filho para baixo (até a PRÓXIMA fenda)
+      widgets.add(const ConnectionLine());
+    }
+
+    // Fenda final (após o último filho)
     widgets.add(
       AddButton(
         parentBlockId: block.id,
-        onAddBlock: (parentId) => _showAddBlockDialog(context, parentId),
-        onBlockDropped: (parentId, draggedId) => model.reorderBlock(parentId, draggedId),
+        insertIndex: children.length,
+        onAddBlock: (parentId, insertIndex) =>
+            _showAddBlockDialog(context, parentId, insertIndex),
+        onBlockDropped: (parentId, draggedId, insertIndex) =>
+            model.moveBlockTo(parentId, draggedId, insertIndex),
       ),
     );
 
-    // Renderiza os filhos
-    if (block.children.isNotEmpty) {
-      if (block.type == 'paths') {
-        // Se for um bloco 'paths', renderiza os filhos em uma Row
-        widgets.add(const ConnectionLine());
-        widgets.add(
-          SizedBox(
-            height: 50,
-            child: CustomPaint(
-              painter: BranchingLinePainter(numChildren: block.children.length),
-              child: Container(),
-            ),
-          ),
-        );
-        widgets.add(
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: block.children.map((childBlock) {
-              return Expanded(
-                child: Column(
-                  children: _buildLayout(context, childBlock),
-                ),
-              );
-            }).toList(),
-          ),
-        );
-      } else {
-        // Para outros blocos, renderiza os filhos em uma Column
-        widgets.add(const ConnectionLine());
-        for (var childBlock in block.children) {
-          widgets.addAll(_buildLayout(context, childBlock));
-        }
-      }
-    }
     return widgets;
   }
 
-  void _showAddBlockDialog(BuildContext context, String parentId) {
+  void _showAddBlockDialog(
+      BuildContext context, String parentId, int insertIndex) {
     final model = Provider.of<WorkflowModel>(context, listen: false);
-    final parentBlock = model.findBlockAndParent(parentId, model.rootBlock)?.block;
+    final parentBlock =
+        model.findBlockAndParent(parentId, model.rootBlock)?.block;
 
     if (parentBlock?.type == 'paths') {
       showDialog(
@@ -167,7 +230,8 @@ class _WorkflowPageState extends State<WorkflowPage> {
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 ListTile(
-                  leading: const Icon(Icons.subdirectory_arrow_right, color: Colors.purple),
+                  leading: const Icon(Icons.subdirectory_arrow_right,
+                      color: Colors.purple),
                   title: const Text('Adicionar Caminho ao Lado'),
                   onTap: () {
                     model.addAnotherPath(parentId);
@@ -192,7 +256,8 @@ class _WorkflowPageState extends State<WorkflowPage> {
                   leading: Icon(blockIcons['action']),
                   title: const Text('Ação'),
                   onTap: () {
-                    model.addBlockAsChild(parentId, 'Nova Ação', 'action');
+                    model.addBlockAsChild(parentId, 'Nova Ação', 'action',
+                        insertIndex: insertIndex);
                     Navigator.pop(context);
                   },
                 ),
@@ -200,7 +265,7 @@ class _WorkflowPageState extends State<WorkflowPage> {
                   leading: Icon(blockIcons['paths']),
                   title: const Text('Caminho'),
                   onTap: () {
-                    model.addPaths(parentId);
+                    model.addPaths(parentId, insertIndex: insertIndex);
                     Navigator.pop(context);
                   },
                 ),
@@ -208,7 +273,8 @@ class _WorkflowPageState extends State<WorkflowPage> {
                   leading: Icon(blockIcons['delay']),
                   title: const Text('Atraso'),
                   onTap: () {
-                    model.addBlockAsChild(parentId, 'Atraso', 'delay');
+                    model.addBlockAsChild(parentId, 'Atraso', 'delay',
+                        insertIndex: insertIndex);
                     Navigator.pop(context);
                   },
                 ),
@@ -216,7 +282,8 @@ class _WorkflowPageState extends State<WorkflowPage> {
                   leading: Icon(blockIcons['email']),
                   title: const Text('E-mail'),
                   onTap: () {
-                    model.addBlockAsChild(parentId, 'Enviar E-mail', 'email');
+                    model.addBlockAsChild(parentId, 'Enviar E-mail', 'email',
+                        insertIndex: insertIndex);
                     Navigator.pop(context);
                   },
                 ),
@@ -224,7 +291,9 @@ class _WorkflowPageState extends State<WorkflowPage> {
                   leading: Icon(blockIcons['webhook']),
                   title: const Text('Webhook'),
                   onTap: () {
-                    model.addBlockAsChild(parentId, 'Disparar Webhook', 'webhook');
+                    model.addBlockAsChild(
+                        parentId, 'Disparar Webhook', 'webhook',
+                        insertIndex: insertIndex);
                     Navigator.pop(context);
                   },
                 ),
