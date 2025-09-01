@@ -18,7 +18,7 @@ class WorkflowPage extends StatefulWidget {
 }
 
 class _WorkflowPageState extends State<WorkflowPage> {
-  final ScrollController _scrollController = ScrollController();
+  final TransformationController _transformationController = TransformationController();
 
   @override
   Widget build(BuildContext context) {
@@ -27,24 +27,70 @@ class _WorkflowPageState extends State<WorkflowPage> {
           title: const Text('Blocos Dinâmicos',
           style: TextStyle(color: Colors.white)),
           backgroundColor: DefaultColors.primary,
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.zoom_in, color: Colors.white),
+              onPressed: _zoomIn,
+            ),
+            IconButton(
+              icon: const Icon(Icons.zoom_out, color: Colors.white),
+              onPressed: _zoomOut,
+            ),
+          ],
       ),
-      body: Stack(
-        children: [
-          Consumer<WorkflowModel>(
-            builder: (context, model, _) {
-              return SingleChildScrollView(
-                controller: _scrollController,
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: _buildLayout(context, model.rootBlock),
-                ),
-              );
-            },
-          ),
-        ],
+      body: Consumer<WorkflowModel>(
+        builder: (context, model, _) {
+          return InteractiveViewer(
+            scaleEnabled: true,
+            panEnabled: true,
+            transformationController: _transformationController,
+            constrained: false,
+            boundaryMargin: const EdgeInsets.all(100),
+            minScale: 0.1,
+            maxScale: 2.0,
+            // pega a largura e altura total, porém o bloco sempre fica colado no lado esquerdo
+            // child: IntrinsicWidth(
+            //   child: IntrinsicHeight(
+            //     child: Column( crossAxisAlignment: CrossAxisAlignment.center,
+            //       children: _buildLayout(context, model.rootBlock),
+            //     ),
+            //   ),
+            // ),
+            child: SizedBox(
+             // colocada uma largura fixa por enquanto
+              width: 3000,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: _buildLayout(context, model.rootBlock),
+              ),
+            ),
+          );
+        },
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _transformationController.dispose();
+    super.dispose();
+  }
+
+  void _zoomIn() {
+    final Matrix4 currentMatrix = _transformationController.value;
+    final double scale = currentMatrix.storage[0];
+    final double newScale = (scale * 1.2).clamp(0.1, 2.0);
+    _transformationController.value = Matrix4.identity()
+      ..scale(newScale);
+  }
+
+  void _zoomOut() {
+    final Matrix4 currentMatrix = _transformationController.value;
+    final double scale = currentMatrix.storage[0];
+    final double newScale = (scale / 1.2).clamp(0.1, 2.0);
+    _transformationController.value = Matrix4.identity()
+      ..scale(newScale);
   }
 
   // Função recursiva para construir o layout
