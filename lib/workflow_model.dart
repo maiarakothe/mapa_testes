@@ -14,21 +14,31 @@ class WorkflowModel extends ChangeNotifier {
 
   WorkflowBlock get rootBlock => _rootBlock;
 
-  BlockLocation? findBlockAndParent(String id, WorkflowBlock? startNode, {WorkflowBlock? parent}) {
+  BlockLocation? findBlockAndParent(String id, WorkflowBlock? startNode,
+      {WorkflowBlock? parent}) {
     if (startNode == null) return null;
     if (startNode.id == id) {
-      return BlockLocation(block: startNode, parent: parent, index: parent?.children.indexOf(startNode) ?? 0);
+      return BlockLocation(
+          block: startNode,
+          parent: parent,
+          index: parent?.children.indexOf(startNode) ?? 0);
     }
     for (int i = 0; i < startNode.children.length; i++) {
-      final found = findBlockAndParent(id, startNode.children[i], parent: startNode);
+      final found =
+          findBlockAndParent(id, startNode.children[i], parent: startNode);
       if (found != null) return found;
     }
     return null;
   }
 
-  void addBlockAsChild(String parentId, String title, String type, {String subtitle = 'Adicionado dinamicamente'}) {
+  void addBlockAsChild(String parentId, String title, String type,
+      {String subtitle = 'Adicionado dinamicamente', int? insertIndex}) {
     final parentBlock = findBlockAndParent(parentId, _rootBlock)?.block;
     if (parentBlock == null) return;
+
+    if (parentBlock.type == 'paths' && type != 'path') {
+      return;
+    }
 
     final newBlock = WorkflowBlock(
       id: uuid.v4(),
@@ -37,11 +47,48 @@ class WorkflowModel extends ChangeNotifier {
       type: type,
     );
 
-    parentBlock.children.add(newBlock);
+    final idx = (insertIndex == null)
+        ? parentBlock.children.length
+        : insertIndex.clamp(0, parentBlock.children.length);
+
+    parentBlock.children.insert(idx, newBlock);
     notifyListeners();
   }
 
-  void addPaths(String parentId) {
+  // Mover bloco arrastado para um parent específico, em um índice específico
+  void moveBlockTo(String parentId, String draggedId, int insertIndex) {
+    final draggedLocation = findBlockAndParent(draggedId, _rootBlock);
+    if (draggedLocation == null || draggedLocation.parent == null) return;
+
+    final newParent = findBlockAndParent(parentId, _rootBlock)?.block;
+    if (newParent == null) {
+      return;
+    }
+
+    final draggedBlock = draggedLocation.block;
+    final oldParent = draggedLocation.parent!;
+    int oldIndex = oldParent.children.indexOf(draggedBlock);
+
+    if (draggedBlock.type == 'path' && newParent.type != 'paths') {
+      return;
+    }
+    if (newParent.type == 'paths' && draggedBlock.type != 'path') {
+      return;
+    }
+
+    oldParent.children.removeAt(oldIndex);
+
+    int targetIndex = insertIndex;
+    if (oldParent.id == newParent.id && oldIndex < insertIndex) {
+      targetIndex = insertIndex - 1;
+    }
+
+    targetIndex = targetIndex.clamp(0, newParent.children.length);
+    newParent.children.insert(targetIndex, draggedBlock);
+    notifyListeners();
+  }
+
+  void addPaths(String parentId, {int? insertIndex}) {
     final parentBlock = findBlockAndParent(parentId, _rootBlock)?.block;
     if (parentBlock == null) return;
 
@@ -66,10 +113,13 @@ class WorkflowModel extends ChangeNotifier {
       type: 'path',
     );
 
-    pathsBlock.children.add(pathA);
-    pathsBlock.children.add(pathB);
+    pathsBlock.children.addAll([pathA, pathB]);
 
-    parentBlock.children.add(pathsBlock);
+    final idx = (insertIndex == null)
+        ? parentBlock.children.length
+        : insertIndex.clamp(0, parentBlock.children.length);
+
+    parentBlock.children.insert(idx, pathsBlock);
     notifyListeners();
   }
 
@@ -95,7 +145,9 @@ class WorkflowModel extends ChangeNotifier {
     final targetLocation = findBlockAndParent(targetId, _rootBlock);
 
     if (draggedLocation == null || targetLocation == null) return;
-    if (draggedLocation.parent == null) return; // Não permite reordenar o bloco raiz
+    if (draggedLocation.parent == null) {
+      return; // Não permite reordenar o bloco raiz
+    }
 
     final draggedBlock = draggedLocation.block;
     final draggedParent = draggedLocation.parent!;
@@ -135,8 +187,7 @@ class WorkflowModel extends ChangeNotifier {
 
     if (location.block.type == 'paths') {
       location.parent!.children.remove(location.block);
-    }
-    else {
+    } else {
       final parentChildren = location.parent!.children;
       final blockToRemove = location.block;
       final index = parentChildren.indexOf(blockToRemove);

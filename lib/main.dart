@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:mapa_testes/workflow_model.dart';
 import 'package:mapa_testes/workflow_page.dart';
 import 'package:provider/provider.dart';
-import 'package:uuid/uuid.dart';
-
 void main() {
   runApp(
     ChangeNotifierProvider(
