@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:mapa_testes/workflow_model.dart';
+import 'package:provider/provider.dart';
+import 'data.dart';
 import 'main.dart';
 
 // ---------------- Botão Adicionar ----------------
@@ -26,13 +29,61 @@ class _AddButtonState extends State<AddButton> {
 
   @override
   Widget build(BuildContext context) {
+    final model = Provider.of<WorkflowModel>(context, listen: false);
+
     return DragTarget<String>(
       onAcceptWithDetails: (details) {
+        setState(() {
+          _isHovering = false;
+        });
         widget.onBlockDropped(widget.parentBlockId, details.data, widget.insertIndex);
+      },
+      onWillAcceptWithDetails: (data) {
+        setState(() {
+          _isHovering = true;
+        });
+        return true;
+      },
+      onLeave: (data) {
+        setState(() {
+          _isHovering = false;
+        });
       },
       builder: (context, candidateData, rejectedData) {
         final isDraggingOver = candidateData.isNotEmpty;
-        final isInteractive = isDraggingOver || _isHovering;
+
+        // Se um bloco está sendo arrastado por cima, mostra um bloco fantasma
+        if (isDraggingOver) {
+          final draggedId = candidateData.first;
+          final draggedBlock = model.findBlockAndParent(draggedId!, model.rootBlock)?.block;
+
+          if (draggedBlock != null) {
+            final blockColor = blockColors[draggedBlock.type] ?? Colors.grey;
+            return Opacity(
+              opacity: 0.15,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: 290,
+                    height: 95,
+                    margin: const EdgeInsets.symmetric(vertical: 0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: blockColor, width: 2),
+                    ),
+                  ),
+                  Icon(
+                    Icons.check_circle_outline,
+                    color: blockColor,
+                    size: 48,
+                  ),
+                ],
+              ),
+            );
+          }
+        }
         return MouseRegion(
           onEnter: (event) {
             setState(() {
@@ -57,14 +108,14 @@ class _AddButtonState extends State<AddButton> {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: isInteractive
+                  color: _isHovering
                       ? DefaultColors.primary : DefaultColors.secondary,
-                  borderRadius: BorderRadius.circular(isInteractive ? 12 : 20),
+                  borderRadius: BorderRadius.circular(_isHovering ? 12 : 20),
                   boxShadow: [
                     BoxShadow(
-                      color: isInteractive
+                      color: _isHovering
                           // ignore: deprecated_member_use
-                          ? (isDraggingOver ? DefaultColors.primary: DefaultColors.secondary).withOpacity(0.4)
+                          ? DefaultColors.primary.withOpacity(0.4)
                           : Colors.transparent,
                       blurRadius: 10,
                       offset: const Offset(0, 4),

@@ -31,15 +31,18 @@ class BlockWidget extends StatelessWidget {
 
     return Draggable<String>(
       data: block.id,
-      feedback: Material(
-        elevation: 10,
-        borderRadius: BorderRadius.circular(16),
-        child: Opacity(
-          opacity: 0.5,
+      feedback: Opacity(
+        opacity: 0.3, // Opacidade do bloco sendo arrastado
+        child: Material(
+          elevation: 10,
+          borderRadius: BorderRadius.circular(16),
           child: _buildBlock(context, blockColor, blockIcon),
         ),
       ),
-      childWhenDragging: Opacity(opacity: 0.5, child: _buildBlock(context, blockColor, blockIcon)),
+      childWhenDragging: Opacity(
+        opacity: 0.6, // Opacidade do bloco que fica
+        child: _buildBlock(context, blockColor, blockIcon),
+      ),
       child: DragTarget<String>(
         onWillAccept: (data) => data != block.id,
         onAccept: (dragged) => onBlockDropped(block.id, dragged),
