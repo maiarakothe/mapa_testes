@@ -87,8 +87,22 @@ class BlockWidget extends StatelessWidget {
                     onRenameBlock(block);
                   } else if (value == 'duplicate') {
                     onDuplicateBlock(block.id);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Bloco "${block.title}" duplicado!'),
+                        duration: const Duration(seconds: 2),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
                   } else if (value == 'delete') {
                     onRemoveBlock(block.id);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Bloco "${block.title}" removido!'),
+                        duration: const Duration(seconds: 2),
+                        backgroundColor: Colors.green,
+                      ),
+                    );
                   }
                 },
                 itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[

@@ -208,6 +208,16 @@ class _WorkflowPageState extends State<WorkflowPage> {
     return widgets;
   }
 
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        duration: const Duration(seconds: 3),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
+
   void _showAddBlockDialog(
       BuildContext context, String parentId, int insertIndex) {
     final model = Provider.of<WorkflowModel>(context, listen: false);
@@ -230,6 +240,7 @@ class _WorkflowPageState extends State<WorkflowPage> {
                   onTap: () {
                     model.addAnotherPath(parentId);
                     Navigator.of(dialogContext).pop();
+                    _showSnackBar('Novo caminho adicionado ao lado!');
                   },
                 ),
               ],
@@ -253,6 +264,7 @@ class _WorkflowPageState extends State<WorkflowPage> {
                     model.addBlockAsChild(parentId, 'Nova Ação', 'action',
                         insertIndex: insertIndex);
                     Navigator.pop(context);
+                    _showSnackBar('Bloco "Nova Ação" adicionado!');
                   },
                 ),
                 ListTile(
@@ -261,6 +273,7 @@ class _WorkflowPageState extends State<WorkflowPage> {
                   onTap: () {
                     model.addPaths(parentId, insertIndex: insertIndex);
                     Navigator.pop(context);
+                    _showSnackBar('Bloco "Caminhos" adicionado!');
                   },
                 ),
                 ListTile(
@@ -270,6 +283,7 @@ class _WorkflowPageState extends State<WorkflowPage> {
                     model.addBlockAsChild(parentId, 'Atraso', 'delay',
                         insertIndex: insertIndex);
                     Navigator.pop(context);
+                    _showSnackBar('Bloco "Atraso" adicionado!');
                   },
                 ),
                 ListTile(
@@ -279,6 +293,7 @@ class _WorkflowPageState extends State<WorkflowPage> {
                     model.addBlockAsChild(parentId, 'Enviar E-mail', 'email',
                         insertIndex: insertIndex);
                     Navigator.pop(context);
+                    _showSnackBar('Bloco "Enviar E-mail" adicionado!');
                   },
                 ),
                 ListTile(
@@ -289,6 +304,7 @@ class _WorkflowPageState extends State<WorkflowPage> {
                         parentId, 'Disparar Webhook', 'webhook',
                         insertIndex: insertIndex);
                     Navigator.pop(context);
+                    _showSnackBar('Bloco "Disparar Webhook" adicionado!');
                   },
                 ),
               ],
