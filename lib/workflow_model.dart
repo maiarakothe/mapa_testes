@@ -208,4 +208,32 @@ class WorkflowModel extends ChangeNotifier {
     block.title = newTitle;
     notifyListeners();
   }
+
+  void duplicateBlock(String id) {
+    final location = findBlockAndParent(id, _rootBlock);
+    if (location == null || location.parent == null) return;
+
+    final originalBlock = location.block;
+    final parent = location.parent!;
+    final originalIndex = parent.children.indexOf(originalBlock);
+    final duplicatedBlock = _deepCopyBlock(originalBlock);
+
+    parent.children.insert(originalIndex + 1, duplicatedBlock);
+    notifyListeners();
+  }
+
+// Função auxiliar para criar uma cópia
+  WorkflowBlock _deepCopyBlock(WorkflowBlock original) {
+    final newBlock = WorkflowBlock(
+      id: uuid.v4(),
+      title: '${original.title} (Cópia)',
+      subtitle: original.subtitle,
+      type: original.type,
+      children: [],
+    );
+    for (final child in original.children) {
+      newBlock.children.add(_deepCopyBlock(child));
+    }
+    return newBlock;
+  }
 }

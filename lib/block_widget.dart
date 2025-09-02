@@ -11,6 +11,7 @@ class BlockWidget extends StatelessWidget {
   final Function(String targetId, String draggedId) onBlockDropped;
   final Function(WorkflowBlock) onRenameBlock;
   final Function(String) onRemoveBlock;
+  final Function(String) onDuplicateBlock;
   final double width;
 
   const BlockWidget({
@@ -19,6 +20,7 @@ class BlockWidget extends StatelessWidget {
     required this.onBlockDropped,
     required this.onRenameBlock,
     required this.onRemoveBlock,
+    required this.onDuplicateBlock,
     this.width = 220,
   });
 
@@ -84,7 +86,7 @@ class BlockWidget extends StatelessWidget {
                   if (value == 'rename') {
                     onRenameBlock(block);
                   } else if (value == 'duplicate') {
-                    // Lógica para duplicar
+                    onDuplicateBlock(block.id);
                   } else if (value == 'delete') {
                     onRemoveBlock(block.id);
                   }

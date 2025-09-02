@@ -106,6 +106,7 @@ class _WorkflowPageState extends State<WorkflowPage> {
       onBlockDropped: (targetId, draggedId) =>
           model.reorderBlock(targetId, draggedId),
       onRemoveBlock: (id) => model.removeBlock(id),
+      onDuplicateBlock: (id) => model.duplicateBlock(id),
     ));
 
     // 'paths' permanece com o layout especial
