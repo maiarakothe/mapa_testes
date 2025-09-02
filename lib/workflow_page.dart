@@ -49,22 +49,21 @@ class _WorkflowPageState extends State<WorkflowPage> {
             boundaryMargin: const EdgeInsets.all(100),
             minScale: 0.1,
             maxScale: 2.0,
-            // pega a largura e altura total, porém o bloco sempre fica colado no lado esquerdo
-            // child: IntrinsicWidth(
-            //   child: IntrinsicHeight(
-            //     child: Column( crossAxisAlignment: CrossAxisAlignment.center,
-            //       children: _buildLayout(context, model.rootBlock),
-            //     ),
-            //   ),
-            // ),
-            child: SizedBox(
-              // colocada uma largura fixa por enquanto
-              width: 3000,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: _buildLayout(context, model.rootBlock,
-                    allowLeafFenda: true),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minWidth: MediaQuery.of(context).size.width,
+                minHeight: 100,
+              ),
+              child: IntrinsicWidth(
+                child: IntrinsicHeight(
+                  child: Column(
+                    children: _buildLayout(
+                      context,
+                      model.rootBlock,
+                      allowLeafFenda: true,
+                    ),
+                  ),
+                ),
               ),
             ),
           );
