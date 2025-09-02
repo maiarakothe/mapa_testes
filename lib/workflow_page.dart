@@ -132,17 +132,6 @@ class _WorkflowPageState extends State<WorkflowPage> {
                 children: [
                   // Renderiza o próprio caminho (ex: Caminho A)
                   ..._buildLayout(context, childBlock, allowLeafFenda: true),
-
-                  // Linha + AddButton específicos desse caminho
-                  const ConnectionLine(),
-                  AddButton(
-                    parentBlockId: childBlock.id,
-                    insertIndex: childBlock.children.length,
-                    onAddBlock: (parentId, insertIndex) =>
-                        _showAddBlockDialog(context, parentId, insertIndex),
-                    onBlockDropped: (parentId, draggedId, insertIndex) =>
-                        model.moveBlockTo(parentId, draggedId, insertIndex),
-                  ),
                 ],
               ),
             );
@@ -193,24 +182,29 @@ class _WorkflowPageState extends State<WorkflowPage> {
       // Linha da fenda até o filho
       widgets.add(const ConnectionLine());
 
-      // Renderiza o filho i, suprimindo a fenda interna de folha (evita "plus" duplicado)
-      widgets.addAll(_buildLayout(context, children[i], allowLeafFenda: false));
+      widgets.addAll(
+        _buildLayout(context, children[i],
+            allowLeafFenda: children[i].type == 'paths' ? false : false),
+      );
 
-      // Linha do filho para baixo (até a PRÓXIMA fenda)
-      widgets.add(const ConnectionLine());
+      if (children[i].type != 'paths') {
+        widgets.add(const ConnectionLine());
+      }
     }
 
     // Fenda final (após o último filho)
-    widgets.add(
-      AddButton(
-        parentBlockId: block.id,
-        insertIndex: children.length,
-        onAddBlock: (parentId, insertIndex) =>
-            _showAddBlockDialog(context, parentId, insertIndex),
-        onBlockDropped: (parentId, draggedId, insertIndex) =>
-            model.moveBlockTo(parentId, draggedId, insertIndex),
-      ),
-    );
+    if (children.isEmpty || children.last.type != 'paths') {
+      widgets.add(
+        AddButton(
+          parentBlockId: block.id,
+          insertIndex: children.length,
+          onAddBlock: (parentId, insertIndex) =>
+              _showAddBlockDialog(context, parentId, insertIndex),
+          onBlockDropped: (parentId, draggedId, insertIndex) =>
+              model.moveBlockTo(parentId, draggedId, insertIndex),
+        ),
+      );
+    }
 
     return widgets;
   }
