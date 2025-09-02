@@ -108,9 +108,27 @@ class _WorkflowPageState extends State<WorkflowPage> {
       onDuplicateBlock: (id) => model.duplicateBlock(id),
     ));
 
-    // 'paths' permanece com o layout especial
+    // 'paths'
     if (block.type == 'paths') {
       widgets.add(const ConnectionLine());
+
+      widgets.add(
+        Center(
+          child: AddButton(
+            parentBlockId: block.id,
+            insertIndex: block.children.length,
+            onAddBlock: (parentId, insertIndex) {
+              model.addAnotherPath(parentId);
+            },
+            onBlockDropped: (parentId, draggedId, insertIndex) {
+              model.moveBlockTo(parentId, draggedId, insertIndex);
+            },
+          ),
+        ),
+      );
+
+      widgets.add(const ConnectionLine());
+
       widgets.add(
         SizedBox(
           height: 50,
@@ -129,7 +147,7 @@ class _WorkflowPageState extends State<WorkflowPage> {
             return Expanded(
               child: Column(
                 children: [
-                  // Renderiza o próprio caminho (ex: Caminho A)
+                  // Renderiza o próprio caminho das fendas
                   ..._buildLayout(context, childBlock, allowLeafFenda: true),
                 ],
               ),
