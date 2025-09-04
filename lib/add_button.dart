@@ -9,7 +9,8 @@ import 'main.dart';
 class AddButton extends StatefulWidget {
   final String parentBlockId;
   final int insertIndex;
-  final Function(String parentId, String draggedId, int insertIndex) onBlockDropped;
+  final Function(String parentId, String draggedId, int insertIndex)
+      onBlockDropped;
   final Function(String parentId, int insertIndex) onAddBlock;
 
   const AddButton({
@@ -36,7 +37,8 @@ class _AddButtonState extends State<AddButton> {
         setState(() {
           _isHovering = false;
         });
-        widget.onBlockDropped(widget.parentBlockId, details.data, widget.insertIndex);
+        widget.onBlockDropped(
+            widget.parentBlockId, details.data, widget.insertIndex);
       },
       onWillAcceptWithDetails: (data) {
         setState(() {
@@ -55,7 +57,8 @@ class _AddButtonState extends State<AddButton> {
         // Se um bloco está sendo arrastado por cima, mostra um bloco fantasma
         if (isDraggingOver) {
           final draggedId = candidateData.first;
-          final draggedBlock = model.findBlockAndParent(draggedId!, model.rootBlock)?.block;
+          final draggedBlock =
+              model.findBlockAndParent(draggedId!, model.rootBlock)?.block;
 
           if (draggedBlock != null) {
             final blockColor = blockColors[draggedBlock.type] ?? Colors.grey;
@@ -104,12 +107,13 @@ class _AddButtonState extends State<AddButton> {
               child: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
                 curve: Curves.easeIn,
-                margin: const EdgeInsets.symmetric(vertical: 0),
+                margin: const EdgeInsets.symmetric(vertical: 5),
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
                   color: _isHovering
-                      ? DefaultColors.primary : DefaultColors.secondary,
+                      ? DefaultColors.primary
+                      : DefaultColors.secondary,
                   borderRadius: BorderRadius.circular(_isHovering ? 12 : 20),
                   boxShadow: [
                     BoxShadow(
@@ -122,7 +126,10 @@ class _AddButtonState extends State<AddButton> {
                     ),
                   ],
                 ),
-                child: const Icon(Icons.add, color: Colors.white),
+                child: const Icon(
+                  Icons.add,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),

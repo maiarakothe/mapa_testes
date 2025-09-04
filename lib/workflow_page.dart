@@ -310,12 +310,12 @@ class _WorkflowPageState extends State<WorkflowPage> {
                 ),
                 ListTile(
                   leading: Icon(blockIcons['email']),
-                  title: const Text('E-mail'),
+                  title: const Text('Email'),
                   onTap: () {
-                    model.addBlockAsChild(parentId, 'Enviar E-mail', 'email',
+                    model.addBlockAsChild(parentId, 'Enviar Email', 'email',
                         insertIndex: insertIndex);
                     Navigator.pop(context);
-                    _showSnackBar('Bloco "Enviar E-mail" adicionado!');
+                    _showSnackBar('Bloco "Enviar Email" adicionado!');
                   },
                 ),
                 ListTile(

@@ -21,7 +21,7 @@ class BlockWidget extends StatelessWidget {
     required this.onRenameBlock,
     required this.onRemoveBlock,
     required this.onDuplicateBlock,
-    this.width = 220,
+    this.width = 320,
   });
 
   @override
@@ -46,22 +46,27 @@ class BlockWidget extends StatelessWidget {
       child: DragTarget<String>(
         onWillAccept: (data) => data != block.id,
         onAccept: (dragged) => onBlockDropped(block.id, dragged),
-        builder: (context, candidate, rejected) => _buildBlock(context, blockColor, blockIcon, highlight: candidate.isNotEmpty),
+        builder: (context, candidate, rejected) => _buildBlock(
+            context, blockColor, blockIcon,
+            highlight: candidate.isNotEmpty),
       ),
     );
   }
 
-  Widget _buildBlock(BuildContext context, Color color, IconData icon, {bool highlight = false}) {
+  Widget _buildBlock(BuildContext context, Color color, IconData icon,
+      {bool highlight = false}) {
     return Container(
       width: width,
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(10),
       margin: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(8),
         boxShadow: [
           BoxShadow(
-            color: highlight ? Colors.grey.withOpacity(0.9) : Colors.black.withOpacity(0.05),
+            color: highlight
+                ? Colors.grey.withOpacity(0.5)
+                : Colors.black.withOpacity(0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -72,19 +77,33 @@ class BlockWidget extends StatelessWidget {
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Icon(icon, size: 24, color: color),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12.0),
-                  child: Text(
-                    block.title,
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: color),
+            children: <Widget>[
+              Container(
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.2),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(
+                      color: color,
+                    ),
                   ),
-                ),
-              ),
+                  padding: EdgeInsets.all(4),
+                  child: Row(
+                    children: <Widget>[
+                      Icon(icon, size: 20, color: color),
+                      SizedBox(width: 5),
+                      Text(
+                        block.title,
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 14,
+                        ),
+                      ),
+                      SizedBox(width: 5),
+                    ],
+                  )),
               PopupMenuButton<String>(
                 icon: const Icon(Icons.more_vert, color: Colors.grey),
+                tooltip: '',
                 onSelected: (String value) {
                   if (value == 'rename') {
                     onRenameBlock(block);
@@ -130,10 +149,11 @@ class BlockWidget extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 10),
           Text(
             block.subtitle,
-            style: const TextStyle(color: Colors.black54,
+            style: const TextStyle(
+              color: Colors.black54,
             ),
           ),
         ],

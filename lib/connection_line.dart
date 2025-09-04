@@ -23,9 +23,10 @@ class StraightLinePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
       ..color = DefaultColors.primary
-      ..strokeWidth = 2 // Linha mais fina
+      ..strokeWidth = 1.5 // Linha mais fina
       ..style = PaintingStyle.stroke;
-    canvas.drawLine(Offset(size.width / 2, 0), Offset(size.width / 2, size.height), paint);
+    canvas.drawLine(
+        Offset(size.width / 2, 0), Offset(size.width / 2, size.height), paint);
   }
 
   @override
@@ -46,7 +47,7 @@ class BranchingLinePainter extends CustomPainter {
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
     final path = Path();
-    
+
     final double childColumnWidth = size.width / numChildren;
     final double firstChildX = childColumnWidth / 2;
     final double lastChildX = size.width - (childColumnWidth / 2);
@@ -71,6 +72,7 @@ class BranchingLinePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(CustomPainter oldDelegate) {
-    return oldDelegate is! BranchingLinePainter || oldDelegate.numChildren != numChildren;
+    return oldDelegate is! BranchingLinePainter ||
+        oldDelegate.numChildren != numChildren;
   }
 }
