@@ -270,6 +270,7 @@ class _WorkflowPageState extends State<WorkflowPage> {
       showDialog(
         context: context,
         builder: (BuildContext dialogContext) {
+          final isLast = insertIndex == (parentBlock!.children.length);
           return AlertDialog(
             title: const Text('Adicionar'),
             content: Column(
@@ -285,13 +286,14 @@ class _WorkflowPageState extends State<WorkflowPage> {
                     _showSnackBar('Bloco "Nova Ação" adicionado!');
                   },
                 ),
-                ListTile(
-                  leading: Icon(blockIcons['paths']),
-                  title: const Text('Caminho'),
-                  onTap: () {
-                    model.addPaths(parentId, insertIndex: insertIndex);
-                    Navigator.pop(context);
-                    _showSnackBar('Bloco "Caminhos" adicionado!');
+                if (parentBlock.type != 'paths' && isLast)
+                  ListTile(
+                    leading: Icon(blockIcons['paths']),
+                    title: const Text('Caminho'),
+                    onTap: () {
+                        model.addPaths(parentId, insertIndex: insertIndex);
+                      Navigator.pop(context);
+                      _showSnackBar('Bloco "Caminhos" adicionado!');
                   },
                 ),
                 ListTile(
