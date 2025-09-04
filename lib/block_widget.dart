@@ -89,14 +89,16 @@ class BlockWidget extends StatelessWidget {
                   if (value == 'rename') {
                     onRenameBlock(block);
                   } else if (value == 'duplicate') {
-                    onDuplicateBlock(block.id);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Bloco "${block.title}" duplicado!'),
-                        duration: const Duration(seconds: 2),
-                        backgroundColor: Colors.green,
-                      ),
-                    );
+                    if (block.type != 'paths') {
+                      onDuplicateBlock(block.id);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('Bloco "${block.title}" duplicado!'),
+                          duration: const Duration(seconds: 2),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    }
                   } else if (value == 'delete') {
                     onRemoveBlock(block.id);
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -108,20 +110,23 @@ class BlockWidget extends StatelessWidget {
                     );
                   }
                 },
-                itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
-                  const PopupMenuItem<String>(
-                    value: 'rename',
-                    child: Text('Renomear'),
-                  ),
-                  const PopupMenuItem<String>(
-                    value: 'duplicate',
-                    child: Text('Duplicar'),
-                  ),
-                  const PopupMenuItem<String>(
-                    value: 'delete',
-                    child: Text('Deletar'),
-                  ),
-                ],
+                itemBuilder: (BuildContext context) {
+                  return <PopupMenuEntry<String>>[
+                    const PopupMenuItem<String>(
+                      value: 'rename',
+                      child: Text('Renomear'),
+                    ),
+                    if (block.type != 'paths')
+                      const PopupMenuItem<String>(
+                        value: 'duplicate',
+                        child: Text('Duplicar'),
+                      ),
+                    const PopupMenuItem<String>(
+                      value: 'delete',
+                      child: Text('Deletar'),
+                    ),
+                  ];
+                },
               ),
             ],
           ),

@@ -76,6 +76,12 @@ class WorkflowModel extends ChangeNotifier {
       return;
     }
 
+    if (draggedBlock.type == 'paths' && newParent.type != 'paths') {
+      if (insertIndex != newParent.children.length) {
+        return;
+      }
+    }
+
     oldParent.children.removeAt(oldIndex);
 
     int targetIndex = insertIndex;
