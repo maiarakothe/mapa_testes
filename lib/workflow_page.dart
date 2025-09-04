@@ -49,20 +49,17 @@ class _WorkflowPageState extends State<WorkflowPage> {
             boundaryMargin: const EdgeInsets.all(100),
             minScale: 0.1,
             maxScale: 2.0,
-            child: ConstrainedBox(
-              constraints: BoxConstraints(
-                minWidth: MediaQuery.of(context).size.width,
-              ),
-              child: IntrinsicWidth(
-                child: IntrinsicHeight(
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 20),
-                    child: Column(
-                      children: _buildLayout(
-                        context,
-                        model.rootBlock,
-                        allowLeafFenda: true,
-                      ),
+            child: IntrinsicWidth(
+              stepWidth: MediaQuery.of(context).size.width,
+              stepHeight: MediaQuery.of(context).size.height,
+              child: IntrinsicHeight(
+              child: Padding(
+                  padding: const EdgeInsets.only(top: 20),
+                  child: Column(
+                    children: _buildLayout(
+                      context,
+                      model.rootBlock,
+                      allowLeafFenda: true,
                     ),
                   ),
                 ),
