@@ -52,15 +52,17 @@ class _WorkflowPageState extends State<WorkflowPage> {
             child: ConstrainedBox(
               constraints: BoxConstraints(
                 minWidth: MediaQuery.of(context).size.width,
-                minHeight: 100,
               ),
               child: IntrinsicWidth(
                 child: IntrinsicHeight(
-                  child: Column(
-                    children: _buildLayout(
-                      context,
-                      model.rootBlock,
-                      allowLeafFenda: true,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 20),
+                    child: Column(
+                      children: _buildLayout(
+                        context,
+                        model.rootBlock,
+                        allowLeafFenda: true,
+                      ),
                     ),
                   ),
                 ),
